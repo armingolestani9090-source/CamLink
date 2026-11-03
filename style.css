@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --background: #08111f;
+    --panel: #111e30;
+    --border: #263a52;
+    --text: #edf5ff;
+    --muted: #91a5bb;
+    --green: #35d69a;
+    --red: #ff647c;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--background);
+    color: var(--text);
+    font-family: Vazirmatn, Tahoma, sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+.container {
+    width: min(700px, 92%);
+    margin: auto;
+    padding: 25px 0;
+}
+
+header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 18px;
+}
+
+.logo {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--green);
+    color: #062019;
+    font-size: 25px;
+    font-weight: 900;
+}
+
+header h2 {
+    direction: ltr;
+}
+
+header span {
+    margin-right: auto;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+main {
+    margin-top: 35px;
+}
+
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 25px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#home {
+    text-align: center;
+    padding: 45px 25px;
+}
+
+#home h1 {
+    font-size: 38px;
+    direction: ltr;
+    color: var(--green);
+}
+
+#home p {
+    color: var(--muted);
+    margin-bottom: 35px;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    border-radius: 12px;
+    padding: 14px;
+    font-weight: 700;
+}
+
+.primary {
+    display: block;
+    width: 100%;
+    background: var(--green);
+    color: #062019;
+}
+
+.primary:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.secondary {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    background: #1c3047;
+    color: white;
+}
+
+.danger,
+.small-danger {
+    background: #ff647c20;
+    border: 1px solid #ff647c55;
+    color: #ff8295;
+}
+
+.danger {
+    width: 100%;
+    margin-top: 15px;
+}
+
+.small-danger {
+    padding: 8px 15px;
+}
+
+.back {
+    background: none;
+    color: var(--muted);
+    margin-bottom: 15px;
+}
+
+.notice {
+    background: #b98b3515;
+    border: 1px solid #b98b3550;
+    color: #e8d6ad;
+    padding: 15px;
+    border-radius: 12px;
+    line-height: 2;
+    font-size: 13px;
+    margin: 20px 0;
+}
+
+.input {
+    width: 100%;
+    padding: 14px;
+    margin: 12px 0;
+    background: #07111f;
+    border: 1px solid var(--border);
+    color: white;
+    border-radius: 12px;
+    outline: none;
+}
+
+.input:focus {
+    border-color: var(--green);
+}
+
+.consent {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin: 20px 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.consent input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--green);
+}
+
+.status {
+    margin: 15px 0;
+    color: var(--green);
+    font-size: 13px;
+    line-height: 2;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.camera-card {
+    background: #192a40;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 15px;
+    margin: 12px 0;
+}
+
+.camera-card p {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.camera-card button {
+    width: 100%;
+    background: var(--green);
+    color: #062019;
+}
+
+video {
+    width: 100%;
+    max-height: 450px;
+    aspect-ratio: 16 / 9;
+    object-fit: contain;
+    background: black;
+    border-radius: 14px;
+}
+
+footer {
+    text-align: center;
+    color: #60758c;
+    font-size: 11px;
+    padding: 25px 0;
+}
+
+@media(max-width: 500px) {
+    .panel {
+        padding: 18px;
+    }
+  }
