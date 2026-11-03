@@ -1,23 +1,34 @@
 "use strict";
 
+
+/* ==========================================
+   تنظیمات و متغیرهای اصلی
+========================================== */
+
 const $ = id => document.getElementById(id);
 
-const SERVER = CONFIG.SERVER_URL;
+const SERVER = CONFIG.SERVER_URL.replace(/\/$/, "");
 
 let socket = null;
+
 let localStream = null;
+
 let peer = null;
 
 let adminToken = null;
+
 let currentSource = null;
 
 let pendingCandidates = [];
+
 let isAdmin = false;
 
+let connecting = false;
 
-/* =====================================
-   مدیریت نمایش صفحات
-===================================== */
+
+/* ==========================================
+   مدیریت صفحات
+========================================== */
 
 function show(id) {
 
@@ -26,36 +37,54 @@ function show(id) {
         "senderPanel",
         "loginPanel",
         "adminPanel"
+
     ].forEach(name => {
+
         $(name).classList.add("hidden");
+
     });
 
     $(id).classList.remove("hidden");
+
 }
+
 
 function status(id, message) {
+
     $(id).textContent = message;
+
 }
 
 
-/* =====================================
-   انتخاب بخش‌ها
-===================================== */
+/* ==========================================
+   دکمه‌های صفحه اصلی
+========================================== */
 
 $("openSender").onclick = () => {
+
     show("senderPanel");
+
 };
 
+
 $("openAdmin").onclick = () => {
+
     show("loginPanel");
+
 };
+
 
 document.querySelectorAll("[data-back]").forEach(button => {
 
     button.onclick = () => {
 
-        stopCamera();
-        disconnectAdmin();
+        if (localStream) {
+            stopCamera();
+        }
+
+        if (isAdmin) {
+            disconnectAdmin();
+        }
 
         show("home");
 
@@ -64,9 +93,9 @@ document.querySelectorAll("[data-back]").forEach(button => {
 });
 
 
-/* =====================================
-   رضایت کاربر
-===================================== */
+/* ==========================================
+   مدیریت رضایت کاربر
+========================================== */
 
 $("consent").onchange = () => {
 
@@ -75,47 +104,160 @@ $("consent").onchange = () => {
 };
 
 
-/* =====================================
+/* ==========================================
    ارتباط WebSocket
-===================================== */
+========================================== */
 
 function connectSocket() {
 
     return new Promise((resolve, reject) => {
 
-        const url = SERVER.replace(/^http/, "ws") + "/ws";
+        if (!SERVER || SERVER.includes("YOUR-RAILWAY")) {
 
-        socket = new WebSocket(url);
+            reject(
+                new Error("آدرس سرور Railway هنوز تنظیم نشده است.")
+            );
 
-        socket.onopen = () => resolve();
+            return;
 
-        socket.onerror = () => reject(
-            new Error("اتصال به سرور برقرار نشد.")
-        );
+        }
 
-        socket.onclose = () => {
+        if (socket) {
 
-            if (isAdmin) {
-                status("adminStatus", "ارتباط با سرور قطع شد.");
+            socket.close();
+
+            socket = null;
+
+        }
+
+        const wsUrl = SERVER.replace(/^http/, "ws") + "/ws";
+
+        const ws = new WebSocket(wsUrl);
+
+        socket = ws;
+
+        let settled = false;
+
+        const timeout = setTimeout(() => {
+
+            if (!settled) {
+
+                settled = true;
+
+                ws.close();
+
+                reject(
+                    new Error("زمان اتصال به سرور تمام شد.")
+                );
+
             }
 
-            if (localStream) {
-                stopCamera();
+        }, 15000);
+
+
+        ws.onopen = () => {
+
+            if (settled) return;
+
+            settled = true;
+
+            clearTimeout(timeout);
+
+            resolve();
+
+        };
+
+
+        ws.onerror = () => {
+
+            if (!settled) {
+
+                settled = true;
+
+                clearTimeout(timeout);
+
+                reject(
+                    new Error("اتصال به سرور برقرار نشد.")
+                );
+
             }
 
         };
 
-        socket.onmessage = event => {
 
-            let data;
+        ws.onmessage = event => {
 
             try {
-                data = JSON.parse(event.data);
-            } catch {
-                return;
+
+                const data = JSON.parse(event.data);
+
+                handleMessage(data).catch(error => {
+
+                    console.error("Message error:", error);
+
+                    if (isAdmin) {
+
+                        status(
+                            "adminStatus",
+                            "خطا در پردازش ارتباط تصویری."
+                        );
+
+                    }
+
+                });
+
+            } catch (error) {
+
+                console.error("Invalid message:", error);
+
             }
 
-            handleMessage(data);
+        };
+
+
+        ws.onclose = () => {
+
+            if (socket === ws) {
+
+                socket = null;
+
+            }
+
+            if (localStream) {
+
+                stopLocalTracks();
+
+                closePeer();
+
+                $("stopCamera").classList.add("hidden");
+
+                $("startCamera").classList.remove("hidden");
+
+                $("startCamera").disabled = !$("consent").checked;
+
+                status(
+                    "senderStatus",
+                    "ارتباط قطع شد. اشتراک‌گذاری متوقف شد."
+                );
+
+            }
+
+            if (isAdmin) {
+
+                closePeer();
+
+                currentSource = null;
+
+                $("remoteVideo").srcObject = null;
+
+                $("videoSection").classList.add("hidden");
+
+                status(
+                    "adminStatus",
+                    "ارتباط با سرور قطع شد."
+                );
+
+            }
 
         };
 
@@ -126,26 +268,54 @@ function connectSocket() {
 
 function send(data) {
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ) {
+
         socket.send(JSON.stringify(data));
+
+        return true;
+
     }
+
+    return false;
 
 }
 
 
-/* =====================================
-   شروع دوربین کاربر
-===================================== */
+/* ==========================================
+   شروع اشتراک‌گذاری دوربین
+========================================== */
 
 $("startCamera").onclick = startCamera;
 
+
 async function startCamera() {
+
+    if (connecting || localStream) return;
 
     if (!$("consent").checked) return;
 
+    if (!navigator.mediaDevices?.getUserMedia) {
+
+        status(
+            "senderStatus",
+            "مرورگر از دسترسی دوربین پشتیبانی نمی‌کند."
+        );
+
+        return;
+
+    }
+
+    connecting = true;
+
     $("startCamera").disabled = true;
 
-    status("senderStatus", "در حال دریافت اجازه دوربین...");
+    status(
+        "senderStatus",
+        "در انتظار اجازه دسترسی به دوربین..."
+    );
 
     try {
 
@@ -154,145 +324,246 @@ async function startCamera() {
             audio: false,
 
             video: {
+
                 facingMode: "environment",
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                frameRate: { ideal: 15, max: 20 }
+
+                width: {
+                    ideal: 640
+                },
+
+                height: {
+                    ideal: 480
+                },
+
+                frameRate: {
+                    ideal: 15,
+                    max: 20
+                }
+
             }
 
         });
 
-        status("senderStatus", "در حال اتصال به سرور...");
-
-        await connectSocket();
-
-        send({
-            type: "source",
-            label: $("cameraName").value.trim() || "دوربین کاربر"
-        });
-
-        $("startCamera").classList.add("hidden");
-        $("stopCamera").classList.remove("hidden");
 
         status(
             "senderStatus",
-            "دوربین فعال است؛ منتظر اتصال مدیر..."
+            "در حال اتصال به سرور..."
         );
+
+
+        await connectSocket();
+
+
+        const sent = send({
+
+            type: "source",
+
+            label:
+                $("cameraName").value.trim() ||
+                "دوربین کاربر"
+
+        });
+
+
+        if (!sent) {
+
+            throw new Error("ثبت دوربین در سرور انجام نشد.");
+
+        }
+
+
+        $("startCamera").classList.add("hidden");
+
+        $("stopCamera").classList.remove("hidden");
+
+
+        status(
+            "senderStatus",
+            "دوربین فعال است؛ منتظر مشاهده مدیر..."
+        );
+
 
     } catch (error) {
 
         stopCamera();
 
-        status("senderStatus", error.message);
+        status(
+            "senderStatus",
+            error.message || "خطا در شروع دوربین."
+        );
 
-        $("startCamera").disabled = false;
+    } finally {
+
+        connecting = false;
 
     }
 
 }
 
 
-/* =====================================
-   توقف دوربین
-===================================== */
+/* ==========================================
+   توقف Trackهای دوربین
+========================================== */
+
+function stopLocalTracks() {
+
+    if (!localStream) return;
+
+    localStream.getTracks().forEach(track => {
+
+        track.stop();
+
+    });
+
+    localStream = null;
+
+}
+
+
+/* ==========================================
+   توقف کامل اشتراک‌گذاری
+========================================== */
 
 $("stopCamera").onclick = stopCamera;
 
+
 function stopCamera() {
 
-    if (localStream) {
+    stopLocalTracks();
 
-        localStream.getTracks().forEach(track => {
-            track.stop();
-        });
-
-        localStream = null;
-
-    }
-
-    if (peer) {
-        peer.close();
-        peer = null;
-    }
+    closePeer();
 
     if (socket) {
 
         if (socket.readyState === WebSocket.OPEN) {
-            send({ type: "source_stop" });
+
+            send({
+                type: "source_stop"
+            });
+
         }
 
-        socket.close();
+        const oldSocket = socket;
+
         socket = null;
+
+        oldSocket.close();
 
     }
 
     $("stopCamera").classList.add("hidden");
+
     $("startCamera").classList.remove("hidden");
 
     $("startCamera").disabled = !$("consent").checked;
 
-    status("senderStatus", "اشتراک‌گذاری متوقف شد.");
+    status(
+        "senderStatus",
+        "اشتراک‌گذاری متوقف شد."
+    );
 
 }
 
 
-/* =====================================
+/* ==========================================
    ورود مدیر
-===================================== */
+========================================== */
 
 $("loginButton").onclick = loginAdmin;
 
+
 async function loginAdmin() {
+
+    if (connecting) return;
 
     const password = $("adminPassword").value;
 
     if (!password) {
-        status("loginStatus", "رمز عبور را وارد کن.");
+
+        status(
+            "loginStatus",
+            "رمز عبور را وارد کن."
+        );
+
         return;
+
     }
 
-    status("loginStatus", "در حال بررسی...");
+    connecting = true;
+
+    $("loginButton").disabled = true;
+
+    status(
+        "loginStatus",
+        "در حال بررسی رمز عبور..."
+    );
+
 
     try {
 
-        const response = await fetch(SERVER + "/api/login", {
+        const response = await fetch(
+            SERVER + "/api/login",
+            {
 
-            method: "POST",
+                method: "POST",
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+                headers: {
 
-            body: JSON.stringify({
-                password
-            })
+                    "Content-Type": "application/json"
 
-        });
+                },
+
+                body: JSON.stringify({
+
+                    password
+
+                })
+
+            }
+        );
+
 
         const result = await response.json();
 
+
         if (!response.ok) {
-            throw new Error(result.error || "ورود ناموفق بود.");
+
+            throw new Error(
+                result.error || "ورود ناموفق بود."
+            );
+
         }
+
 
         adminToken = result.token;
 
         $("adminPassword").value = "";
 
+
         await connectAdmin();
+
 
     } catch (error) {
 
-        status("loginStatus", error.message);
+        status(
+            "loginStatus",
+            error.message || "خطا در ورود مدیر."
+        );
+
+    } finally {
+
+        connecting = false;
+
+        $("loginButton").disabled = false;
 
     }
 
 }
 
 
-/* =====================================
-   اتصال پنل مدیر
-===================================== */
+/* ==========================================
+   اتصال مدیر
+========================================== */
 
 async function connectAdmin() {
 
@@ -302,37 +573,59 @@ async function connectAdmin() {
 
         await connectSocket();
 
-        send({
+
+        const sent = send({
+
             type: "admin",
+
             token: adminToken
+
         });
+
+
+        if (!sent) {
+
+            throw new Error("ارسال اطلاعات مدیر ناموفق بود.");
+
+        }
+
 
         show("adminPanel");
 
-        status("adminStatus", "در حال احراز هویت...");
+        status(
+            "adminStatus",
+            "در حال احراز هویت مدیر..."
+        );
+
 
     } catch (error) {
 
         isAdmin = false;
 
-        status("loginStatus", error.message);
+        adminToken = null;
+
+        throw error;
 
     }
 
 }
 
 
-/* =====================================
+/* ==========================================
    دریافت پیام‌های سرور
-===================================== */
+========================================== */
 
 async function handleMessage(data) {
 
     switch (data.type) {
 
+
         case "admin_ready":
 
-            status("adminStatus", "مدیر با موفقیت وارد شد.");
+            status(
+                "adminStatus",
+                "ورود مدیر موفقیت‌آمیز بود."
+            );
 
             break;
 
@@ -356,7 +649,7 @@ async function handleMessage(data) {
 
         case "watch_request":
 
-            await createSourceAnswer(data);
+            await createSourceOffer(data);
 
             break;
 
@@ -370,9 +663,14 @@ async function handleMessage(data) {
 
         case "answer":
 
-            if (peer) {
+            if (
+                peer &&
+                data.sourceId === currentSource
+            ) {
 
-                await peer.setRemoteDescription(data.description);
+                await peer.setRemoteDescription(
+                    data.description
+                );
 
                 await flushCandidates();
 
@@ -383,15 +681,22 @@ async function handleMessage(data) {
 
         case "candidate":
 
-            if (peer && data.candidate) {
+            if (
+                data.candidate &&
+                data.sourceId === currentSource
+            ) {
 
-                if (peer.remoteDescription) {
+                if (peer && peer.remoteDescription) {
 
-                    await peer.addIceCandidate(data.candidate);
+                    await peer.addIceCandidate(
+                        data.candidate
+                    );
 
                 } else {
 
-                    pendingCandidates.push(data.candidate);
+                    pendingCandidates.push(
+                        data.candidate
+                    );
 
                 }
 
@@ -400,18 +705,89 @@ async function handleMessage(data) {
             break;
 
 
+        case "stop_view":
+
+            if (
+                !isAdmin &&
+                data.sourceId === currentSource
+            ) {
+
+                closePeer();
+
+                currentSource = null;
+
+                pendingCandidates = [];
+
+                status(
+                    "senderStatus",
+                    "مدیر مشاهده را متوقف کرد."
+                );
+
+            }
+
+            break;
+
+
+        case "view_stopped":
+
+            if (
+                isAdmin &&
+                data.sourceId === currentSource
+            ) {
+
+                closePeer();
+
+                currentSource = null;
+
+                pendingCandidates = [];
+
+                $("remoteVideo").srcObject = null;
+
+                $("videoSection").classList.add("hidden");
+
+                status(
+                    "adminStatus",
+                    "مشاهده دوربین متوقف شد."
+                );
+
+            }
+
+            break;
+
+
         case "source_closed":
 
-            closeVideo();
+            if (
+                isAdmin &&
+                data.sourceId === currentSource
+            ) {
 
-            status("adminStatus", "اشتراک‌گذاری متوقف شد.");
+                closePeer();
+
+                currentSource = null;
+
+                pendingCandidates = [];
+
+                $("remoteVideo").srcObject = null;
+
+                $("videoSection").classList.add("hidden");
+
+                status(
+                    "adminStatus",
+                    "اشتراک‌گذاری این دوربین متوقف شد."
+                );
+
+            }
 
             break;
 
 
         case "error":
 
-            status("adminStatus", data.message || "خطای سرور");
+            status(
+                isAdmin ? "adminStatus" : "senderStatus",
+                data.message || "خطای سرور"
+            );
 
             break;
 
@@ -420,9 +796,9 @@ async function handleMessage(data) {
 }
 
 
-/* =====================================
-   نمایش فهرست دوربین‌ها
-===================================== */
+/* ==========================================
+   نمایش دوربین‌های فعال
+========================================== */
 
 function renderSources(items) {
 
@@ -430,13 +806,16 @@ function renderSources(items) {
 
     list.innerHTML = "";
 
+
     if (!items.length) {
 
-        list.textContent = "هیچ دوربین فعالی وجود ندارد.";
+        list.textContent =
+            "در حال حاضر هیچ دوربین فعالی وجود ندارد.";
 
         return;
 
     }
+
 
     items.forEach(item => {
 
@@ -444,18 +823,35 @@ function renderSources(items) {
 
         card.className = "camera-card";
 
+
         const title = document.createElement("h3");
+
         title.textContent = item.label;
 
+
         const id = document.createElement("p");
+
         id.textContent = "شناسه: " + item.id;
 
+
         const button = document.createElement("button");
+
         button.textContent = "مشاهده تصویر";
 
-        button.onclick = () => watchCamera(item.id);
 
-        card.append(title, id, button);
+        button.onclick = () => {
+
+            watchCamera(item.id);
+
+        };
+
+
+        card.append(
+            title,
+            id,
+            button
+        );
+
 
         list.appendChild(card);
 
@@ -464,151 +860,284 @@ function renderSources(items) {
 }
 
 
-/* =====================================
-   مشاهده دوربین
-===================================== */
+/* ==========================================
+   درخواست مشاهده دوربین
+========================================== */
 
 function watchCamera(sourceId) {
 
-    closeVideo();
+    if (!isAdmin || !socket) return;
+
+    if (currentSource === sourceId) return;
+
+
+    if (currentSource) {
+
+        send({
+
+            type: "stop_view",
+
+            sourceId: currentSource
+
+        });
+
+    }
+
+
+    closePeer();
 
     currentSource = sourceId;
 
     pendingCandidates = [];
 
+
+    $("remoteVideo").srcObject = null;
+
+    $("videoSection").classList.add("hidden");
+
+
     send({
+
         type: "watch",
+
         sourceId
+
     });
 
-    status("adminStatus", "درخواست مشاهده ارسال شد...");
+
+    status(
+        "adminStatus",
+        "درخواست مشاهده ارسال شد..."
+    );
 
 }
 
 
-/* =====================================
-   ساخت Offer مدیر
-===================================== */
+/* ==========================================
+   ساخت Offer در دستگاه دوربین
+========================================== */
 
-async function createSourceAnswer(data) {
+async function createSourceOffer(data) {
 
-    if (!localStream) return;
+    if (!localStream || !socket) return;
+
 
     closePeer();
 
     currentSource = data.sourceId;
 
-    peer = new RTCPeerConnection({
+    pendingCandidates = [];
+
+
+    const connection = new RTCPeerConnection({
+
         iceServers: CONFIG.ICE_SERVERS
+
     });
 
-    peer.onicecandidate = event => {
+    peer = connection;
 
-        if (event.candidate) {
+
+    connection.onicecandidate = event => {
+
+        if (
+            event.candidate &&
+            peer === connection
+        ) {
 
             send({
+
                 type: "candidate",
+
                 sourceId: currentSource,
+
                 candidate: event.candidate
+
             });
 
         }
 
     };
 
+
     localStream.getTracks().forEach(track => {
-        peer.addTrack(track, localStream);
+
+        connection.addTrack(
+            track,
+            localStream
+        );
+
     });
 
-    const offer = await peer.createOffer();
 
-    await peer.setLocalDescription(offer);
+    const offer = await connection.createOffer();
+
+
+    await connection.setLocalDescription(offer);
+
+
+    if (peer !== connection) return;
+
 
     send({
+
         type: "offer",
-        description: peer.localDescription
+
+        description: connection.localDescription
+
     });
+
+
+    status(
+        "senderStatus",
+        "در حال برقراری ارتباط تصویری با مدیر..."
+    );
 
 }
 
 
-/* =====================================
-   پاسخ کاربر به Offer مدیر
-===================================== */
+/* ==========================================
+   دریافت Offer در پنل مدیر
+========================================== */
 
 async function createAdminAnswer(data) {
 
+    if (!isAdmin || !data.sourceId) return;
+
+
     closePeer();
+
+    currentSource = data.sourceId;
 
     pendingCandidates = [];
 
-    peer = new RTCPeerConnection({
+
+    const connection = new RTCPeerConnection({
+
         iceServers: CONFIG.ICE_SERVERS
+
     });
 
-    peer.addTransceiver("video", {
+    peer = connection;
+
+
+    connection.addTransceiver("video", {
+
         direction: "recvonly"
+
     });
 
-    peer.onicecandidate = event => {
 
-        if (event.candidate) {
+    connection.onicecandidate = event => {
+
+        if (
+            event.candidate &&
+            peer === connection
+        ) {
 
             send({
+
                 type: "candidate",
+
                 sourceId: currentSource,
+
                 candidate: event.candidate
+
             });
 
         }
 
     };
 
-    peer.ontrack = event => {
 
-        $("remoteVideo").srcObject = event.streams[0];
+    connection.ontrack = event => {
+
+        if (peer !== connection) return;
+
+        const stream =
+            event.streams[0] ||
+            new MediaStream([event.track]);
+
+
+        $("remoteVideo").srcObject = stream;
 
         $("videoSection").classList.remove("hidden");
 
-        $("videoTitle").textContent = "تصویر زنده دوربین";
+        $("videoTitle").textContent =
+            "تصویر زنده دوربین";
+
+
+        $("remoteVideo").play().catch(() => {});
+
+        status(
+            "adminStatus",
+            "تصویر زنده دریافت شد."
+        );
 
     };
 
-    await peer.setRemoteDescription(data.description);
 
-    const answer = await peer.createAnswer();
+    await connection.setRemoteDescription(
+        data.description
+    );
 
-    await peer.setLocalDescription(answer);
+
+    const answer = await connection.createAnswer();
+
+
+    await connection.setLocalDescription(answer);
+
+
+    if (peer !== connection) return;
+
 
     send({
+
         type: "answer",
+
         sourceId: currentSource,
-        description: peer.localDescription
+
+        description: connection.localDescription
+
     });
+
 
     await flushCandidates();
 
 }
 
 
-/* =====================================
-   مدیریت ICE
-===================================== */
+/* ==========================================
+   مدیریت ICE Candidate
+========================================== */
 
 async function flushCandidates() {
 
     if (!peer || !peer.remoteDescription) return;
 
+
+    const connection = peer;
+
     const candidates = pendingCandidates;
 
     pendingCandidates = [];
 
+
     for (const candidate of candidates) {
 
+        if (peer !== connection) return;
+
         try {
-            await peer.addIceCandidate(candidate);
+
+            await connection.addIceCandidate(candidate);
+
         } catch (error) {
-            console.error(error);
+
+            console.error(
+                "ICE candidate error:",
+                error
+            );
+
         }
 
     }
@@ -616,15 +1145,17 @@ async function flushCandidates() {
 }
 
 
-/* =====================================
-   قطع مشاهده
-===================================== */
-
-$("stopViewing").onclick = closeVideo;
+/* ==========================================
+   بستن Peer Connection
+========================================== */
 
 function closePeer() {
 
     if (peer) {
+
+        peer.onicecandidate = null;
+
+        peer.ontrack = null;
 
         peer.close();
 
@@ -634,67 +1165,128 @@ function closePeer() {
 
 }
 
-function closeVideo() {
+
+/* ==========================================
+   قطع مشاهده دوربین
+========================================== */
+
+$("stopViewing").onclick = () => {
+
+    if (currentSource && isAdmin) {
+
+        send({
+
+            type: "stop_view",
+
+            sourceId: currentSource
+
+        });
+
+    }
+
 
     closePeer();
 
+    currentSource = null;
+
     pendingCandidates = [];
+
 
     $("remoteVideo").srcObject = null;
 
     $("videoSection").classList.add("hidden");
 
-    if (currentSource) {
+
+    status(
+        "adminStatus",
+        "مشاهده دوربین متوقف شد."
+    );
+
+};
+
+
+/* ==========================================
+   خروج مدیر
+========================================== */
+
+$("logoutButton").onclick = disconnectAdmin;
+
+
+function disconnectAdmin() {
+
+    if (currentSource && socket) {
 
         send({
+
             type: "stop_view",
+
             sourceId: currentSource
+
         });
 
     }
 
+
+    closePeer();
+
     currentSource = null;
 
-}
+    pendingCandidates = [];
 
 
-/* =====================================
-   خروج مدیر
-===================================== */
+    $("remoteVideo").srcObject = null;
 
-$("logoutButton").onclick = disconnectAdmin;
+    $("videoSection").classList.add("hidden");
 
-function disconnectAdmin() {
-
-    closeVideo();
 
     isAdmin = false;
 
     adminToken = null;
 
+
     if (socket) {
 
-        socket.close();
+        const oldSocket = socket;
 
         socket = null;
 
+        oldSocket.close();
+
     }
+
 
     show("home");
 
 }
 
 
-/* =====================================
-   خروج از صفحه
-===================================== */
+/* ==========================================
+   بستن امن هنگام خروج از صفحه
+========================================== */
 
 window.addEventListener("beforeunload", () => {
 
-    if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-    }
+    stopLocalTracks();
 
     closePeer();
+
+
+    if (socket) {
+
+        if (socket.readyState === WebSocket.OPEN) {
+
+            send({
+
+                type: localStream
+                    ? "source_stop"
+                    : "stop_view"
+
+            });
+
+        }
+
+        socket.close();
+
+    }
 
 });
