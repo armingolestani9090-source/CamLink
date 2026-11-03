@@ -22,13 +22,12 @@
 
     <main>
 
+        <!-- صفحه اصلی -->
         <section id="home" class="panel">
 
             <h1>CamLink</h1>
 
-            <p>
-                سامانه اشتراک‌گذاری تصویر زنده دوربین
-            </p>
+            <p>سامانه اشتراک‌گذاری تصویر زنده دوربین</p>
 
             <button id="openSender" class="primary">
                 اشتراک‌گذاری دوربین
@@ -41,8 +40,7 @@
         </section>
 
 
-        <!-- بخش اشتراک‌گذاری دوربین -->
-
+        <!-- اشتراک‌گذاری دوربین -->
         <section id="senderPanel" class="panel hidden">
 
             <button class="back" data-back>بازگشت</button>
@@ -50,10 +48,13 @@
             <h2>اشتراک‌گذاری دوربین</h2>
 
             <div class="notice">
-                با شروع اشتراک‌گذاری، تصویر زنده دوربین
-                دستگاه شما برای مدیر CamLink ارسال می‌شود.
+                با شروع اشتراک‌گذاری، تصویر زنده دوربین دستگاه شما
+                برای مدیر CamLink ارسال می‌شود.
+
                 مدیر می‌تواند تصویر را مشاهده کند.
+
                 هیچ صدایی ارسال نمی‌شود.
+
                 هر زمان بخواهید می‌توانید اشتراک‌گذاری را متوقف کنید.
             </div>
 
@@ -66,6 +67,7 @@
 
             <label class="consent">
                 <input type="checkbox" id="consent">
+
                 با ارسال تصویر زنده برای مدیر موافقم.
             </label>
 
@@ -83,7 +85,6 @@
 
 
         <!-- ورود مدیر -->
-
         <section id="loginPanel" class="panel hidden">
 
             <button class="back" data-back>بازگشت</button>
@@ -108,7 +109,6 @@
 
 
         <!-- پنل مدیریت -->
-
         <section id="adminPanel" class="panel hidden">
 
             <div class="admin-header">
@@ -139,6 +139,7 @@
                     id="remoteVideo"
                     autoplay
                     playsinline
+                    muted
                 ></video>
 
                 <button id="stopViewing" class="danger">
@@ -161,4 +162,4 @@
 <script src="app.js"></script>
 
 </body>
-  </html>
+</html>
