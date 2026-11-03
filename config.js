@@ -3,7 +3,7 @@
 const CONFIG = {
 
     // آدرس سرور Railway
-    SERVER_URL: "https://YOUR-RAILWAY-DOMAIN",
+    SERVER_URL: "https://camlink-production-4327.up.railway.app",
 
     // تنظیمات ارتباط تصویری
     ICE_SERVERS: [
