@@ -214,6 +214,8 @@ button {
 .camera-card p {
     color: var(--muted);
     font-size: 12px;
+    direction: ltr;
+    overflow-wrap: anywhere;
 }
 
 .camera-card button {
@@ -239,7 +241,9 @@ footer {
 }
 
 @media(max-width: 500px) {
+
     .panel {
         padding: 18px;
     }
-  }
+
+}
