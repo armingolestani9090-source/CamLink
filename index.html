@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08111f">
+
+    <title>CamLink</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="logo">C</div>
+        <h2>CamLink</h2>
+        <span>اتصال دوربین</span>
+    </header>
+
+    <main>
+
+        <section id="home" class="panel">
+
+            <h1>CamLink</h1>
+
+            <p>
+                سامانه اشتراک‌گذاری تصویر زنده دوربین
+            </p>
+
+            <button id="openSender" class="primary">
+                اشتراک‌گذاری دوربین
+            </button>
+
+            <button id="openAdmin" class="secondary">
+                ورود مدیر
+            </button>
+
+        </section>
+
+
+        <!-- بخش اشتراک‌گذاری دوربین -->
+
+        <section id="senderPanel" class="panel hidden">
+
+            <button class="back" data-back>بازگشت</button>
+
+            <h2>اشتراک‌گذاری دوربین</h2>
+
+            <div class="notice">
+                با شروع اشتراک‌گذاری، تصویر زنده دوربین
+                دستگاه شما برای مدیر CamLink ارسال می‌شود.
+                مدیر می‌تواند تصویر را مشاهده کند.
+                هیچ صدایی ارسال نمی‌شود.
+                هر زمان بخواهید می‌توانید اشتراک‌گذاری را متوقف کنید.
+            </div>
+
+            <input
+                id="cameraName"
+                class="input"
+                maxlength="30"
+                placeholder="نام دستگاه (اختیاری)"
+            >
+
+            <label class="consent">
+                <input type="checkbox" id="consent">
+                با ارسال تصویر زنده برای مدیر موافقم.
+            </label>
+
+            <button id="startCamera" class="primary" disabled>
+                تأیید و روشن کردن دوربین
+            </button>
+
+            <div id="senderStatus" class="status"></div>
+
+            <button id="stopCamera" class="danger hidden">
+                توقف اشتراک‌گذاری
+            </button>
+
+        </section>
+
+
+        <!-- ورود مدیر -->
+
+        <section id="loginPanel" class="panel hidden">
+
+            <button class="back" data-back>بازگشت</button>
+
+            <h2>ورود مدیر</h2>
+
+            <input
+                type="password"
+                id="adminPassword"
+                class="input"
+                placeholder="رمز عبور مدیر"
+                autocomplete="current-password"
+            >
+
+            <button id="loginButton" class="primary">
+                ورود
+            </button>
+
+            <p id="loginStatus" class="status"></p>
+
+        </section>
+
+
+        <!-- پنل مدیریت -->
+
+        <section id="adminPanel" class="panel hidden">
+
+            <div class="admin-header">
+
+                <h2>پنل مدیریت</h2>
+
+                <button id="logoutButton" class="small-danger">
+                    خروج
+                </button>
+
+            </div>
+
+            <div id="adminStatus" class="status">
+                در حال اتصال...
+            </div>
+
+            <h3>دوربین‌های فعال</h3>
+
+            <div id="cameraList">
+                <p class="muted">در حال دریافت فهرست...</p>
+            </div>
+
+            <div id="videoSection" class="hidden">
+
+                <h3 id="videoTitle">تصویر زنده</h3>
+
+                <video
+                    id="remoteVideo"
+                    autoplay
+                    playsinline
+                ></video>
+
+                <button id="stopViewing" class="danger">
+                    قطع مشاهده
+                </button>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer>
+        CamLink · اشتراک‌گذاری با رضایت کاربر
+    </footer>
+
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+
+</body>
+  </html>
